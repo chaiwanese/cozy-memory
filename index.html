@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Cozy Farm: Final Balance</title>
-
+<title>Cozy Memory</title>
 <meta name="theme-color" id="nav-theme" content="#87CEEB">
 
 <style>
@@ -22,32 +21,25 @@ body {
     width: 100vw;
     color: #582f0e;
     overflow: hidden;
-    background-color: #87CEEB; 
+    background-color: #87CEEB; /* Fallback Color */
 }
 
 /* ==========================================
-   BACKGROUNDS RESTORED
+   BACKGROUNDS
    ========================================== */
-
-.bg-day { background-image: url('https://i.postimg.cc/gksHTR3t/IMG-20260301-171008.png'); }
-.bg-noon { background-image: url('https://i.postimg.cc/x1qMpZfd/IMG-20260301-171031.png'); }
-.bg-night { background-image: url('https://i.postimg.cc/k4Nbt3cv/IMG-20260301-171057.png'); }
-.bg-midnight { background-image: url('https://i.postimg.cc/fTR9kP09/IMG-20260301-171115.png'); }
-.bg-tavern { background: #1a162d !important; background-image: none !important; } 
-
 #bg-image {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     background-size: cover;
     background-position: center;
+    background-image: url('https://i.postimg.cc/gksHTR3t/IMG-20260301-171008.png');
     z-index: -2;
-    transition: background 1s ease;
+    transition: opacity 0.5s ease;
 }
 
 /* ==========================================
    GAME UI
    ========================================== */
-
 #game {
     width: 92%; max-width: 400px;
     background: #fdf6e3; border: 6px solid #a47148; 
@@ -59,11 +51,12 @@ body {
 
 .tavern-mode #game { background: #432818; border-color: #99582a; color: #ffe6a7; }
 
+/* SMALLER STAR COUNTER */
 #star-display {
-    background: rgba(255, 255, 255, 0.5);
-    padding: 4px 12px;
-    border-radius: 15px;
-    font-size: 22px;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 18px;
     font-weight: 700;
     color: #ffb700;
     text-shadow: 1px 1px 0 #582f0e;
@@ -71,10 +64,11 @@ body {
     border: 2px solid #a47148;
 }
 
+/* SEASON ICON - MIRRORS TIMER */
 #season-icon {
     position: absolute; 
     bottom: 0; left: 0; 
-    transform: translate(-20%, 20%);
+    transform: translate(-15%, 15%);
     background: #81b29a;
     border: 4px solid #a47148; 
     width: 50px; height: 50px; border-radius: 50%;
@@ -85,7 +79,7 @@ body {
 
 #card {
     width: 100%; background: white; border: 3px solid #cb997e; 
-    border-radius: 12px; padding: 20px 15px; min-height: 140px; 
+    border-radius: 12px; padding: 15px; min-height: 140px; 
     font-size: 22px; text-align: center; display: flex; 
     flex-direction: column; align-items: center; justify-content: center; line-height: 1.3;
 }
@@ -121,20 +115,19 @@ button:active { transform: translateY(2px); box-shadow: 0 2px 0 #b04d35; }
 #instructBtn { background: #81b29a; box-shadow: 0 4px 0 #5d8a74; }
 #buyHeartBtn { background: #d00000; box-shadow: 0 4px 0 #900000; }
 #buyTimeBtn { background: #457b9d; box-shadow: 0 4px 0 #1d3557; }
-#nextSeasonBtn { background: #f4a261; box-shadow: 0 4px 0 #bc6c25; }
 
 #timer {
-    position: absolute; top: 0; right: 0; transform: translate(30%, -30%);
+    position: absolute; top: 0; right: 0; transform: translate(15%, -15%);
     background: #f2cc8f; border: 4px solid #a47148; 
-    width: 60px; height: 60px; border-radius: 50%;
+    width: 55px; height: 55px; border-radius: 50%;
     display: flex; justify-content: center; align-items: center;
-    font-size: 28px; font-weight: 700; color: #582f0e; z-index: 100; 
+    font-size: 24px; font-weight: 700; color: #582f0e; z-index: 100; 
 }
 
 #info {
     width: 100%; display: flex; justify-content: space-between; font-size: 14px;
     margin-top: 20px; border-top: 2px dashed #cb997e; 
-    padding: 15px 5px 0 35px; 
+    padding: 15px 0 0 35px; /* Offset for Season Icon */
 }
 
 .pop { animation: pop 0.3s forwards; }
@@ -148,14 +141,14 @@ button:active { transform: translateY(2px); box-shadow: 0 2px 0 #b04d35; }
 </head>
 <body>
 
-<div id="bg-image" class="bg-day"></div>
+<div id="bg-image"></div>
 
 <div id="game">
     <div id="timer">--</div>
     <div id="season-icon">🌸</div>
     <div id="star-display">⭐ <span id="top-score">0</span></div>
 
-    <div id="card">Ready for Day 1?</div>
+    <div id="card">A fresh morning!<br>Ready for Day 1?</div>
     
     <input id="answer" placeholder="Type here..." disabled autocomplete="off" style="display:none;">
     
@@ -195,7 +188,12 @@ function playSound(freq, type, duration) {
     } catch(e) {}
 }
 
-const backgroundClasses = ['bg-day', 'bg-noon', 'bg-night', 'bg-midnight'];
+const backgrounds = [
+    'https://i.postimg.cc/gksHTR3t/IMG-20260301-171008.png', // Day
+    'https://i.postimg.cc/x1qMpZfd/IMG-20260301-171031.png', // Noon
+    'https://i.postimg.cc/k4Nbt3cv/IMG-20260301-171057.png', // Night
+    'https://i.postimg.cc/fTR9kP09/IMG-20260301-171115.png'  // Midnight
+];
 const seasons = [
     {name: "Spring", emoji: "🌸", color: "#81b29a"}, 
     {name: "Summer", emoji: "☀️", color: "#e76f51"}, 
@@ -292,7 +290,7 @@ answer.addEventListener("keypress", (e) => { if(e.key === "Enter") submit(); });
 
 function showInstructions() {
     playSound(440, 'sine', 0.1);
-    card.innerHTML = "<b>Rules:</b><br>1. Memorize the items.<br>2. Reach streaks of 5 for stars.<br>3. Earn stars for clearing Days (10) and Seasons (25)!";
+    card.innerHTML = "<b>Rules:</b><br>1. Memorize the items.<br>2. Streaks of 5 earn ⭐ 10 stars.<br>3. Stars for clearing Days (10) and Seasons (25)!";
 }
 
 function startRound() {
@@ -307,7 +305,7 @@ function startRound() {
     roundWords = masterPool.slice(0, baseWordCount);
 
     let dayIndex = totalRounds % 4;
-    bgImage.className = backgroundClasses[dayIndex];
+    bgImage.style.backgroundImage = `url('${backgrounds[dayIndex]}')`;
     
     const navTheme = document.getElementById("nav-theme");
     if(navTheme) navTheme.setAttribute("content", themeColors[dayIndex]);
@@ -319,7 +317,6 @@ function startRound() {
 function memorizePhase(time) {
     answer.disabled = true; 
     card.innerHTML = "<div class='word-grid' id='wordGrid'></div>";
-    
     const grid = document.getElementById("wordGrid");
     roundWords.forEach((w, i) => {
         const div = document.createElement('div'); 
@@ -356,11 +353,10 @@ function submit() {
 
     if(playerInput === correctWord) {
         streak++;
-        // STREAK LOGIC: Every 5 gives 10 stars
         if(streak >= 5 && streak % 5 === 0) {
             score += 10; 
             playSound(1200, 'sine', 0.3);
-            card.innerHTML = "<span class='streak-glow'>STREAK REWARD! +10 Stars</span>";
+            card.innerHTML = "<span class='streak-glow'>STREAK BONUS! +10 Stars</span>";
         } else {
             playSound(880, 'sine', 0.2); 
             card.classList.add("pop");
@@ -384,35 +380,30 @@ function nextQuestion() {
     card.classList.remove("pop", "bounce");
     answer.value = ""; 
     updateUI();
-    if(hp <= 0) return endGame("Season failed... Game Over.");
+    if(hp <= 0) return endGame("Too tired to farm... Game Over.");
     
     currentIndex++;
     if(currentIndex >= quizWords.length) { 
         totalRounds++;
-        
-        // REWARD: 10 Stars for Day
-        score += 10;
+        score += 10; // DAY REWARD
         updateUI();
         
         if (totalRounds % 4 === 0) return openTavern();
-        
         showStartUI("Day Complete! +10 ⭐<br>Ready for Day " + ((totalRounds % 4) + 1) + "?");
     } else {
-        card.innerHTML = "Which word matches?<br><br><i>" + quizWords[currentIndex].meaning + "</i>";
+        card.innerHTML = "Which matches?<br><br><i>" + quizWords[currentIndex].meaning + "</i>";
     }
 }
 
 function openTavern() {
-    bgImage.className = 'bg-tavern';
+    bgImage.style.backgroundImage = "none";
     document.body.classList.add('tavern-mode');
     btnContainer.style.display = "none";
     tavernContainer.style.display = "block";
     answer.style.display = "none";
     document.getElementById("timer").innerText = "🍺";
-    card.innerHTML = "<b>Welcome to the Tavern!</b><br>Season Finish Bonus: +25 ⭐<br>Get ready for the next Season.";
-    
-    // REWARD: 25 Stars for Season
-    score += 25;
+    card.innerHTML = "<b>Welcome to the Tavern!</b><br>Season Bonus: +25 ⭐<br>Prepare for the next Season.";
+    score += 25; // SEASON REWARD
     updateUI();
 }
 
@@ -427,7 +418,7 @@ function buyHeart() {
 
 function buyTime() {
     if (score >= 50) {
-        score -= 50; bonusTimer += 3; // +3s Timer
+        score -= 50; bonusTimer += 3; 
         playSound(600, 'sine', 0.2); 
         updateUI();
         card.innerHTML = "Bought +3s Timer! ⏳ (" + (baseTimer + bonusTimer) + "s total)";
@@ -441,11 +432,9 @@ function startNewSeason() {
     document.body.classList.remove('tavern-mode');
     tavernContainer.style.display = "none";
     btnContainer.style.display = "block";
-    bgImage.className = 'bg-day';
-    
-    const curSeason = seasons[seasonCount % 4];
+    bgImage.style.backgroundImage = `url('${backgrounds}')`;
     updateUI();
-    showStartUI(curSeason.name + " begins!<br>Ready for Day 1?");
+    showStartUI(seasons[seasonCount % 4].name + " begins!<br>New words await.");
 }
 
 function showStartUI(message) {
@@ -462,7 +451,6 @@ function updateUI() {
     topScoreDisplay.innerHTML = score;
     document.getElementById("playerDay").innerHTML = `Day ${(totalRounds % 4) + 1}`;
     document.getElementById("streakInfo").innerHTML = `🔥 ${streak}`;
-    
     seasonIcon.innerHTML = curSeason.emoji;
     seasonIcon.style.backgroundColor = curSeason.color;
 }
@@ -478,13 +466,12 @@ function endGame(msg) {
 function resetGame() {
     totalRounds = 0; seasonCount = 0; hp = 3; score = 0; streak = 0;
     baseWordCount = 4; baseTimer = 10; bonusTimer = 0;
-    bgImage.className = 'bg-day'; 
+    bgImage.style.backgroundImage = `url('${backgrounds}')`;
     document.body.classList.remove('tavern-mode');
     tavernContainer.style.display = "none";
     btnContainer.style.display = "block";
     updateUI(); 
-    showStartUI("A fresh morning!<br>Ready for Day 1?");
-    instructBtn.style.display = "block";
+    showStartUI("Ready for Day 1?");
     restartBtn.style.display = "none";
 }
 </script>
