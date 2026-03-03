@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cozy Farm Memory</title>
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#87CEEB">
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+    
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root { color-scheme: light; }
+
+    body { 
+        margin: 0; font-family: 'Fredoka', sans-serif; 
+        display: flex; justify-content: center; align-items: center; 
+        height: 100vh; width: 100vw; color: #582f0e !important; 
+        overflow: hidden; background-color: #87CEEB; 
+    }
+
+    /* Desktop View */
+    @media (min-width: 768px) {
+        #game { max-width: 500px !important; padding: 30px !important; border-width: 8px !important; }
+        #card { min-height: 180px !important; font-size: 24px !important; }
+        .word-chip { font-size: 18px !important; padding: 12px !important; }
+        button:hover { background-color: #f4a261 !important; transform: translateY(-2px); box-shadow: 0 6px 0 #b04d35 !important; }
+    }
+
+    .sky-layer { position: fixed; inset: 0; z-index: -2; opacity: 0; transition: opacity 1.5s ease; pointer-events: none; }
+    .active-sky { opacity: 1 !important; }
+
+    #game { 
+        width: 92%; max-width: 380px; background-color: #fdf6e3 !important; 
+        border: 6px solid #a47148; border-radius: 20px; padding: 15px 20px 20px; 
+        box-shadow: 0 8px 0 #7f5539cc; position: relative; display: flex; 
+        flex-direction: column; align-items: center; z-index: 10;
+    }
+    
+    .tavern-mode #game { background-color: #432818 !important; border-color: #99582a; color: #ffe6a7 !important; }
+
+    /* Animations */
+    @keyframes starPop { 50% { transform: scale(1.2); } }
+    .star-animate { animation: starPop 0.4s ease; }
+    @keyframes shake { 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    .shake-animate { animation: shake 0.3s ease 2; }
+    @keyframes correctPulse { 50% { border-color: #2ecc71; box-shadow: 0 0 20px rgba(46, 204, 113, 0.6); } }
+    .correct-animate { animation: correctPulse 0.5s ease; }
+    @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-80px); opacity: 0; } }
+    .danger-text { color: #d00000 !important; animation: starPop 0.5s infinite alternate; }
+
+    #star-display { background: rgba(255, 255, 255, 0.7) !important; padding: 4px 14px; border-radius: 12px; font-size: 18px; font-weight: 700; color: #ffb700 !important; text-shadow: 1px 1px 0 #582f0e; margin-bottom: 8px; border: 2px solid #a47148; }
+    #season-icon { position: absolute; bottom: 0; left: 0; transform: translate(-15%, 15%); background: #81b29a; border: 4px solid #a47148; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; z-index: 100; transition: background 0.5s; }
+    #timer { position: absolute; top: 0; right: 0; transform: translate(15%, -15%); background: #f2cc8f !important; border: 4px solid #a47148; width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 700; color: #582f0e !important; z-index: 100; }
+    
+    #card { width: 100%; background-color: #ffffff !important; color: #582f0e !important; border: 3px solid #cb997e; border-radius: 15px; padding: 15px; min-height: 130px; font-size: 21px; text-align: center; display: flex; flex-direction: column; justify-content: center; line-height: 1.3; transition: opacity 0.3s ease; position: relative; z-index: 20; }
+    .tavern-mode #card { background-color: #6f4e37 !important; border-color: #bb9457; color: #ffffff !important; }
+    
+    .word-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+    .word-chip { background-color: #f1faee !important; border: 2px solid #a8dadc; border-radius: 10px; padding: 6px; font-size: 15px; font-weight: 600; text-transform: capitalize; color: #1d3557 !important; }
+    
+    input { 
+        width: 100%; margin-top: 12px; padding: 12px; 
+        background-color: #ffffff !important; color: #582f0e !important; 
+        border: 3px solid #cb997e; border-radius: 12px; 
+        font-family: 'Fredoka', sans-serif; font-size: 18px; 
+        text-align: center; outline: none; display: none;
+    }
+    input:focus { border-color: #e76f51; background-color: #fffcf0 !important; }
+
+    button { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 12px; background: #e76f51 !important; color: #ffffff !important; font-family: 'Fredoka', sans-serif; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 0 #b04d35; transition: transform 0.1s; }
+    button:active { transform: translateY(2px); box-shadow: 0 2px 0 #b04d35; }
+    #instructBtn { background-color: #81b29a !important; box-shadow: 0 4px 0 #5d8a74; }
+    #resetSaveBtn { background-color: #d00000 !important; box-shadow: 0 4px 0 #900000; display: none; margin-top: 15px; }
+    
+    #info { width: 100%; display: flex; justify-content: space-between; font-size: 14px; margin-top: 15px; border-top: 2px dashed #cb997e; padding: 12px 0 0 32px; font-weight: 600; color: inherit; }
+    .streak-glow { animation: starPop 1s infinite alternate; color: #ffb700 !important; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div id="sky-1" class="sky-layer active-sky" style="background: linear-gradient(to bottom, #ff9a9e, #fad0c4, #a1c4fd);"></div>
+<div id="sky-2" class="sky-layer"></div>
+
+<div id="game">
+    <div id="timer">--</div>
+    <div id="season-icon">🌸</div>
+    <div id="star-display">⭐ <span id="top-score">0</span></div>
+    <div id="card">Ready for Day 1?</div>
+    <input id="answer" placeholder="Type here..." autocomplete="off">
+    
+    <div id="btn-container" style="width:100%">
+        <button id="startBtn">Begin Day</button>
+        <button id="instructBtn">How to Play</button>
+        <button id="submitBtn" style="display:none;">Submit Answer</button>
+        <button id="restartBtn" style="display:none;">Try Again?</button>
+        <button id="resetSaveBtn">Delete Save</button>
+    </div>
+    
+    <div id="tavern-container" style="width:100%; display:none;">
+        <button id="buyHeartBtn">❤️ Heart (100 ⭐)</button>
+        <button id="buyTimeBtn">⏳ +3s Timer (50 ⭐)</button>
+        <button id="nextSeasonBtn">Start Season</button>
+    </div>
+    
+    <div id="info">
+        <span id="playerHP">❤️ 3</span>
+        <span id="playerDay">Day 1</span>
+        <span id="streakInfo">🔥 0</span>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- AUDIO ---
+    let audioCtx;
+    const initAudio = () => { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); };
+    
+    const playSound = (freq, type, duration, vol = 0.2, delay = 0) => {
+        try {
+            initAudio(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + delay + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + delay); osc.stop(audioCtx.currentTime + delay + duration);
+        } catch(e) {}
+    };
+
+    const playTap = () => playSound(800, 'sine', 0.08, 0.1);
+    const playTick = () => playSound(1000, 'square', 0.05, 0.05);
+    const playWrong = () => { playSound(250, 'sawtooth', 0.15, 0.15, 0); playSound(150, 'sawtooth', 0.3, 0.15, 0.15); };
+    const playArp = () => [523, 659, 783, 1046].forEach((f, i) => playSound(f, 'sine', 0.8, 0.15, i * 0.15));
+
+    // --- DATA ---
+    const rawPool = [
+        {word: "apple", meaning: "A red or green fruit."},
+        {word: "bucket", meaning: "Used to carry water."},
+        {word: "carrot", meaning: "An orange vegetable."}
+        // PASTE YOUR 500 WORDS HERE
+    ];
+
+    const masterPool = Array.from(new Map(rawPool.map(i => [i.word, i])).values());
+    const shuffle = (arr) => { for(let i=arr.length-1; i>0; i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; };
+
+    const seasons = [
+        {emoji: "🌸", color: "#81b29a", sky: ["#ff9a9e, #fad0c4, #a1c4fd", "#00BFFF, #87CEFA", "#2c3e50, #4b0082", "#000428, #004e92"]},
+        {emoji: "☀️", color: "#e76f51", sky: ["#ffe259, #ffa751", "#2193b0, #6dd5ed", "#e96443, #904e95", "#0f2027, #2c5364"]},
+        {emoji: "🍂", color: "#a06cd5", sky: ["#f093fb, #f5576c", "#ffafbd, #ffc3a0", "#414345, #232526", "#141e30, #243b55"]},
+        {emoji: "❄️", color: "#457b9d", sky: ["#e6e9f0, #eef1f5", "#83a4d4, #b6fbff", "#2980b9, #2c3e50", "#000000, #434343"]}
+    ];
+
+    // --- STATE ---
+    let totalRounds = 0, seasonCount = 0, hp = 3, score = 0, streak = 0, maxStreak = 0, baseWordCount = 4, baseTimer = 10, bonusTimer = 0;
+    let roundWords = [], quizWords = [], currentIndex = 0, timeLeft, timerInterval, activeSkyId = 1;
+
+    const el = (id) => document.getElementById(id);
+    const dom = {
+        card: el("card"), ans: el("answer"), timer: el("timer"), score: el("top-score"), hp: el("playerHP"),
+        day: el("playerDay"), strk: el("streakInfo"), sIcon: el("season-icon"), start: el("startBtn"),
+        inst: el("instructBtn"), subm: el("submitBtn"), rest: el("restartBtn"), resetSave: el("resetSaveBtn"), 
+        tavern: el("tavern-container"), btns: el("btn-container"), game: el("game"), starBox: el("star-display")
+    };
+
+    const saveGame = () => localStorage.setItem('cozySave', JSON.stringify({ hp, score, totalRounds, seasonCount, bonusTimer, baseWordCount, baseTimer, maxStreak, streak }));
+    
+    const loadGame = () => {
+        const saved = JSON.parse(localStorage.getItem('cozySave'));
+        if (saved && saved.hp > 0) {
+            hp = saved.hp; score = saved.score; totalRounds = saved.totalRounds; seasonCount = saved.seasonCount; 
+            bonusTimer = saved.bonusTimer; baseWordCount = saved.baseWordCount; baseTimer = saved.baseTimer; 
+            maxStreak = saved.maxStreak || 0; streak = saved.streak || 0;
+            dom.card.innerHTML = "Welcome back, Farmer!<br>Ready to continue?";
+            dom.resetSave.style.display = "block"; updateUI(); setSky();
+        }
+    };
+
+    const updateUI = (starsEarned = 0) => {
+        const s = seasons[seasonCount % 4];
+        dom.hp.innerText = `❤️ ${hp}`; dom.score.innerText = score;
+        if (starsEarned > 0) { dom.starBox.classList.remove('star-animate'); void dom.starBox.offsetWidth; dom.starBox.classList.add('star-animate'); }
+        dom.day.innerText = `Day ${(totalRounds % 4) + 1}`;
+        let m = ""; if (streak >= 15) m = " (x3)"; else if (streak >= 10) m = " (x2)";
+        dom.strk.innerText = `🔥 ${streak}${m}`;
+        dom.sIcon.innerText = s.emoji; dom.sIcon.style.backgroundColor = s.color;
+    };
+
+    const setSky = (tavern = false) => {
+        activeSkyId = activeSkyId === 1 ? 2 : 1;
+        const layer = el(`sky-${activeSkyId}`), prev = el(`sky-${activeSkyId === 1 ? 2 : 1}`);
+        layer.style.background = tavern ? "linear-gradient(#432818, #2b170e)" : `linear-gradient(${seasons[seasonCount % 4].sky[totalRounds % 4]})`;
+        layer.classList.add('active-sky'); prev.classList.remove('active-sky');
+    };
+
+    const startRound = () => {
+        playSound(1046, 'sine', 0.5, 0.2);
+        dom.start.style.display = dom.inst.style.display = dom.rest.style.display = dom.resetSave.style.display = "none";
+        dom.ans.style.display = "none"; dom.subm.style.display = "block";
+        roundWords = shuffle([...masterPool]).slice(0, baseWordCount);
+        quizWords = shuffle([...roundWords]);
+        currentIndex = 0; setSky(); updateUI();
+        dom.card.innerHTML = `<div class='word-grid'>${roundWords.map(w => `<div class='word-chip'>${w.word}</div>`).join('')}</div>`;
+        timeLeft = baseTimer + bonusTimer; dom.timer.innerText = timeLeft;
+        timerInterval = setInterval(() => {
+            timeLeft--; dom.timer.innerText = timeLeft;
+            if(timeLeft <= 3 && timeLeft > 0) { dom.timer.classList.add('danger-text'); playTick(); }
+            if(timeLeft < 0) { clearInterval(timerInterval); quizPhase(); }
+        }, 1000);
+    };
+
+    const quizPhase = () => {
+        dom.ans.style.display = "block"; dom.ans.disabled = false; dom.ans.value = "";
+        dom.timer.innerText = "!"; dom.timer.classList.remove('danger-text');
+        dom.card.innerHTML = `Which matches?<br><br><i>${quizWords[currentIndex].meaning}</i>`;
+        dom.ans.focus();
+    };
+
+    const submitAnswer = () => {
+        const val = dom.ans.value.trim().toLowerCase();
+        if (!val || dom.ans.disabled) return;
+        if (val === quizWords[currentIndex].word) {
+            streak++; if(streak > maxStreak) maxStreak = streak;
+            playSound(1318, 'sine', 0.4, 0.2); dom.card.classList.add('correct-animate');
+            setTimeout(() => dom.card.classList.remove('correct-animate'), 500);
+            if (streak >= 5 && streak % 5 === 0) {
+                let multi = (streak >= 15) ? 3 : (streak >= 10) ? 2 : 1;
+                score += (10 * multi); updateUI(10 * multi);
+                dom.card.innerHTML = `<span class='streak-glow' style='font-size:26px;'>🔥 x${multi} MULTIPLIER!<br>+${10*multi} ⭐</span>`;
+                dom.ans.disabled = true; setTimeout(() => { dom.ans.disabled = false; nextStep(); }, 1200); return;
+            }
+            setTimeout(nextStep, 800);
+        } else {
+            streak = 0; hp--; playWrong(); dom.game.classList.add('shake-animate');
+            setTimeout(() => dom.game.classList.remove('shake-animate'), 600);
+            dom.card.innerHTML = `Incorrect!<br>It was <b>${quizWords[currentIndex].word}</b>`;
+            dom.ans.disabled = true; updateUI();
+            setTimeout(() => { if(hp>0){ dom.ans.disabled = false; dom.ans.focus(); nextStep(); } else endGame(); }, 1800);
+        }
+    };
+
+    const nextStep = () => {
+        dom.ans.value = ""; updateUI();
+        if (++currentIndex < quizWords.length) return quizPhase();
+        totalRounds++; score += 10; updateUI(10); saveGame();
+        dom.subm.style.display = dom.ans.style.display = "none";
+        dom.start.style.display = "block";
+        if (totalRounds % 4 === 0) openTavern();
+        else dom.card.innerHTML = `Day Complete! +10 ⭐`;
+    };
+
+    const openTavern = () => {
+        playSound(880, 'sine', 1, 0.2); setSky(true); document.body.classList.add('tavern-mode');
+        dom.btns.style.display = "none"; dom.tavern.style.display = "block"; score += 25; updateUI(25);
+        dom.card.innerHTML = "<b>The Tavern is Open!</b><br>Season Finish: +25 ⭐";
+    };
+
+    const endGame = () => {
+        playWrong(); clearInterval(timerInterval); localStorage.removeItem('cozySave');
+        dom.subm.style.display = dom.ans.style.display = "none"; dom.rest.style.display = "block";
+        let r = score >= 600 ? "Memory Master" : score >= 100 ? "Apprentice Merchant" : "Village Helper";
+        dom.card.innerHTML = `<b>Game Over!</b><br><small>Rank: ${r}<br>Score: ${score}</small>`;
+    };
+
+    // --- EVENTS ---
+    dom.start.onclick = () => { playTap(); startRound(); };
+    dom.subm.onclick = () => { playTap(); submitAnswer(); };
+    dom.ans.onkeypress = (e) => { if(e.key === "Enter") submitAnswer(); };
+    dom.inst.onclick = () => { 
+        playTap(); 
+        dom.card.innerHTML = `<div style="text-align:left; font-size:16px;"><b>How to Play:</b><br>1. Remember the words.<br>2. Type the match for the clue.<br>3. Hit Enter to submit.<br>4. Reach Day 4 for the shop!</div>`;
+    };
+    dom.resetSave.onclick = () => { localStorage.removeItem('cozySave'); location.reload(); };
+    el("buyHeartBtn").onclick = () => { if(score>=100){ score-=100; hp++; playSound(1174, 'sine', 0.4); updateUI(); saveGame(); } };
+    el("buyTimeBtn").onclick = () => { if(score>=50){ score-=50; bonusTimer+=3; playSound(1174, 'sine', 0.4); updateUI(); saveGame(); } };
+    el("nextSeasonBtn").onclick = () => { playArp(); seasonCount++; baseWordCount+=2; baseTimer+=2; document.body.classList.remove('tavern-mode'); dom.btns.style.display="block"; dom.tavern.style.display="none"; setSky(); updateUI(); };
+    dom.rest.onclick = () => location.reload();
+
+    loadGame();
+});
+</script>
+</body>
+</html>
