@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Cozy Memory</title>
+<meta name="color-scheme" content="light">
+<meta name="theme-color" id="nav-theme" content="#87CEEB">
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root { color-scheme: light; }
+
+    body { 
+        margin: 0; font-family: 'Fredoka', sans-serif; 
+        display: flex; justify-content: center; align-items: center; 
+        height: 100vh; width: 100vw; color: #582f0e !important; 
+        overflow: hidden; background-color: #87CEEB; 
+    }
+
+    @media (min-width: 768px) {
+        #game { max-width: 500px !important; padding: 30px !important; border-width: 8px !important; }
+        #card { min-height: 180px !important; font-size: 24px !important; }
+        .word-chip { font-size: 18px !important; padding: 12px !important; }
+        button:hover { background-color: #f4a261 !important; transform: translateY(-2px); box-shadow: 0 6px 0 #b04d35 !important; }
+    }
+
+    .sky-layer { position: fixed; inset: 0; z-index: -2; opacity: 0; transition: opacity 1.5s ease; }
+    .active-sky { opacity: 1 !important; }
+
+    #game { 
+        width: 92%; max-width: 380px; background-color: #fdf6e3 !important; 
+        border: 6px solid #a47148; border-radius: 20px; padding: 15px 20px 20px; 
+        box-shadow: 0 8px 0 #7f5539cc; position: relative; display: flex; 
+        flex-direction: column; align-items: center; 
+    }
+    .tavern-mode #game { background-color: #432818 !important; border-color: #99582a; color: #ffe6a7 !important; }
+
+    @keyframes starPop { 50% { transform: scale(1.3); } }
+    .star-animate { animation: starPop 0.4s ease; }
+    @keyframes shake { 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+    .shake-animate { animation: shake 0.3s ease 2; }
+    @keyframes correctPulse { 50% { border-color: #2ecc71; box-shadow: 0 0 20px rgba(46, 204, 113, 0.6); transform: scale(1.02); } }
+    .correct-animate { animation: correctPulse 0.5s ease; }
+    @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-80px) scale(1.5); opacity: 0; } }
+    .danger-text { color: #d00000 !important; animation: starPop 0.5s infinite alternate; }
+
+    #star-display { background: rgba(255, 255, 255, 0.7) !important; padding: 4px 14px; border-radius: 12px; font-size: 18px; font-weight: 700; color: #ffb700 !important; text-shadow: 1px 1px 0 #582f0e; margin-bottom: 8px; border: 2px solid #a47148; }
+    #season-icon { position: absolute; bottom: 0; left: 0; transform: translate(-15%, 15%); background: #81b29a; border: 4px solid #a47148; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; z-index: 100; transition: background 0.5s; }
+    #timer { position: absolute; top: 0; right: 0; transform: translate(15%, -15%); background: #f2cc8f !important; border: 4px solid #a47148; width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; font-weight: 700; color: #582f0e !important; z-index: 100; }
+    
+    #card { width: 100%; background-color: #ffffff !important; color: #582f0e !important; border: 3px solid #cb997e; border-radius: 15px; padding: 15px; min-height: 130px; font-size: 21px; text-align: center; display: flex; flex-direction: column; justify-content: center; line-height: 1.3; transition: opacity 0.3s ease; }
+    .tavern-mode #card { background-color: #6f4e37 !important; border-color: #bb9457; color: #ffffff !important; }
+    
+    .word-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+    .word-chip { background-color: #f1faee !important; border: 2px solid #a8dadc; border-radius: 10px; padding: 6px; font-size: 15px; font-weight: 600; text-transform: capitalize; color: #1d3557 !important; }
+    
+    input { width: 100%; margin-top: 12px; padding: 12px; background-color: #ffffff !important; color: #582f0e !important; border: 3px solid #cb997e; border-radius: 12px; font-family: 'Fredoka', sans-serif; font-size: 18px; text-align: center; outline: none; }
+    input:focus { border-color: #e76f51; background-color: #fffcf0 !important; }
+
+    button { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 12px; background: #e76f51 !important; color: #ffffff !important; font-family: 'Fredoka', sans-serif; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 0 #b04d35; transition: transform 0.1s; }
+    button:active { transform: translateY(2px); box-shadow: 0 2px 0 #b04d35; }
+    #instructBtn { background-color: #81b29a !important; box-shadow: 0 4px 0 #5d8a74; }
+    #resetSaveBtn { background-color: #d00000 !important; box-shadow: 0 4px 0 #900000; display: none; margin-top: 15px; }
+    
+    #info { width: 100%; display: flex; justify-content: space-between; font-size: 14px; margin-top: 15px; border-top: 2px dashed #cb997e; padding: 12px 0 0 32px; font-weight: 600; color: inherit; }
+    .streak-glow { animation: pulse 1s infinite; color: #ffb700 !important; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div id="sky-1" class="sky-layer active-sky" style="background: linear-gradient(to bottom, #ff9a9e, #fad0c4, #a1c4fd);"></div>
+<div id="sky-2" class="sky-layer"></div>
+
+<div id="game">
+    <div id="timer">--</div>
+    <div id="season-icon">🌸</div>
+    <div id="star-display">⭐ <span id="top-score">0</span></div>
+    <div id="card">Ready for Day 1?</div>
+    <input id="answer" placeholder="Type here..." disabled style="display:none;" autocomplete="off">
+    
+    <div id="btn-container" style="width:100%">
+        <button id="startBtn">Begin Day</button>
+        <button id="instructBtn">How to Play</button>
+        <button id="submitBtn" style="display:none;">Submit Answer</button>
+        <button id="restartBtn" style="display:none;">Try Again?</button>
+        <button id="resetSaveBtn">Delete Save</button>
+    </div>
+    
+    <div id="tavern-container" style="width:100%; display:none;">
+        <button id="buyHeartBtn">❤️ Heart (100 ⭐)</button>
+        <button id="buyTimeBtn">⏳ +3s Timer (50 ⭐)</button>
+        <button id="nextSeasonBtn">Start Season</button>
+    </div>
+    
+    <div id="info">
+        <span id="playerHP">❤️ 3</span>
+        <span id="playerDay">Day 1</span>
+        <span id="streakInfo">🔥 0</span>
+    </div>
+</div>
+
+<script>
+// --- LOUDER AUDIO ---
+let audioCtx;
+function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+document.addEventListener('click', initAudio, { once: true });
+document.addEventListener('touchstart', initAudio, { once: true });
+
+function playSound(freq, type, duration, vol = 0.2, delay = 0) {
+    try {
+        initAudio(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + delay + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime + delay); osc.stop(audioCtx.currentTime + delay + duration);
+    } catch(e) {}
+}
+
+function playTap() { playSound(800, 'sine', 0.08, 0.1); }
+function playTick() { playSound(1000, 'square', 0.05, 0.05); }
+function playSeasonArpeggio() { const notes = [523.25, 659.25, 783.99, 1046.50]; notes.forEach((f, i) => playSound(f, 'sine', 0.8, 0.15, i * 0.15)); }
+function playWrongSound() { playSound(250, 'sawtooth', 0.15, 0.15, 0); playSound(150, 'sawtooth', 0.3, 0.15, 0.15); }
+
+document.querySelectorAll('button').forEach(btn => { 
+    btn.addEventListener('mousedown', playTap); 
+    btn.addEventListener('touchstart', playTap, {passive: true}); 
+});
+
+// --- MASTER POOL ---
+const masterPool = [
+    // --- FARM & GARDEN (1-100) ---
+    {word: "apple", meaning: "A red or green fruit."}, {word: "bucket", meaning: "Used to carry water."},
+    {word: "carrot", meaning: "An orange vegetable."}, {word: "quilt", meaning: "A warm patchwork blanket."},
+    {word: "hammer", meaning: "A tool used to hit nails."}, {word: "bread", meaning: "Baked food made of flour."},
+    {word: "honey", meaning: "Sweet food made by bees."}, {word: "shovel", meaning: "A tool for digging dirt."},
+    {word: "flower", meaning: "A colorful plant bloom."}, {word: "cheese", meaning: "Food made from milk."},
+    {word: "basket", meaning: "A woven container."}, {word: "lantern", meaning: "A lamp you carry."},
+    {word: "wheat", meaning: "Grain for making flour."}, {word: "boots", meaning: "Heavy outdoor shoes."},
+    {word: "acorn", meaning: "Small nut from an oak tree."}, {word: "spoon", meaning: "Used to eat soup."},
+    {word: "door", meaning: "Used to enter a room."}, {word: "clock", meaning: "Shows the current time."},
+    {word: "brush", meaning: "Used for messy hair."}, {word: "bag", meaning: "Used to carry items."},
+    {word: "key", meaning: "Used to unlock a door."}, {word: "coin", meaning: "Small piece of money."},
+    {word: "ring", meaning: "Jewelry for a finger."}, {word: "star", meaning: "Bright light in the sky."},
+    {word: "sun", meaning: "Hot star in daytime."}, {word: "moon", meaning: "White rock in night sky."},
+    {word: "cloud", meaning: "Fluffy white shape in sky."}, {word: "rain", meaning: "Water falling from sky."},
+    {word: "snow", meaning: "Cold white flakes."}, {word: "wind", meaning: "Moving outdoor air."},
+    {word: "tree", meaning: "Tall plant with wooden trunk."}, {word: "leaf", meaning: "Flat green plant part."},
+    {word: "grass", meaning: "Green plants on ground."}, {word: "rock", meaning: "Hard, solid stone."},
+    {word: "sand", meaning: "Tiny grains at the beach."}, {word: "shell", meaning: "Hard beach covering."},
+    {word: "fish", meaning: "Animal that swims."}, {word: "bird", meaning: "Animal that flies."},
+    {word: "cat", meaning: "Small pet that meows."}, {word: "dog", meaning: "Furry pet that barks."},
+    {word: "mouse", meaning: "Tiny animal with long tail."}, {word: "cow", meaning: "Farm animal for milk."},
+    {word: "pig", meaning: "Pink animal, curly tail."}, {word: "horse", meaning: "Large animal you ride."},
+    {word: "sheep", meaning: "Animal with fluffy wool."}, {word: "goat", meaning: "Farm animal with horns."},
+    {word: "duck", meaning: "Bird that quacks."}, {word: "frog", meaning: "Green animal that hops."},
+    {word: "bee", meaning: "Buzzer that makes honey."}, {word: "ant", meaning: "Tiny insect in a hill."},
+    {word: "book", meaning: "Pages for reading."}, {word: "pen", meaning: "Writes with ink."},
+    {word: "box", meaning: "Cardboard container."}, {word: "cup", meaning: "For drinking liquids."},
+    {word: "plate", meaning: "Flat dish for food."}, {word: "bowl", meaning: "Deep dish for soup."},
+    {word: "fork", meaning: "Tool with sharp prongs."}, {word: "knife", meaning: "Sharp tool for cutting."},
+    {word: "pot", meaning: "Deep round cooker."}, {word: "pan", meaning: "Flat round cooker."},
+    {word: "bed", meaning: "Furniture for sleeping."}, {word: "pillow", meaning: "Cushion for your head."},
+    {word: "chair", meaning: "Seat with four legs."}, {word: "table", meaning: "Furniture with flat top."},
+    {word: "lamp", meaning: "Device that gives light."}, {word: "wall", meaning: "Solid side of a room."},
+    {word: "roof", meaning: "Top covering of house."}, {word: "window", meaning: "Glass wall opening."},
+    {word: "stairs", meaning: "Steps that go up or down."}, {word: "shoe", meaning: "Covering for the foot."},
+    {word: "hat", meaning: "Covering for the head."}, {word: "shirt", meaning: "Clothing for upper body."},
+    {word: "pants", meaning: "Clothing for legs."}, {word: "dress", meaning: "Single piece for women."},
+    {word: "coat", meaning: "Heavy outdoor jacket."}, {word: "ball", meaning: "Round object for games."},
+    {word: "kite", meaning: "Flying wind toy."}, {word: "doll", meaning: "Toy looks like person."},
+    {word: "car", meaning: "Four-wheeled vehicle."}, {word: "bike", meaning: "Two-wheeled pedal vehicle."},
+    {word: "drum", meaning: "Hit it with sticks."}, {word: "rake", meaning: "Gathers fallen leaves."},
+    {word: "hoe", meaning: "Tilts farm soil."}, {word: "seeds", meaning: "Plant these to grow crops."},
+    {word: "barn", meaning: "Where farm animals live."}, {word: "coop", meaning: "House for chickens."},
+    {word: "silo", meaning: "Stores animal feed."}, {word: "well", meaning: "Hole for getting water."},
+    {word: "beets", meaning: "Purple root vegetable."}, {word: "onion", meaning: "Veggie makes you cry."},
+    {word: "kettle", meaning: "Boils water for tea."}, {word: "fridge", meaning: "Keeps food cold."},
+    {word: "stove", meaning: "Heats up meals."}, {word: "sponge", meaning: "Washes dirty dishes."},
+    {word: "faucet", meaning: "Where water comes out."}, {word: "closet", meaning: "Place to hang coats."},
+    {word: "shelf", meaning: "Flat board for books."}, {word: "ladder", meaning: "Used to climb high."},
+    {word: "rope", meaning: "Thick tying cord."}, {word: "brush", meaning: "Used for painting."},
+    {word: "bucket", meaning: "Holds water or sand."},
+
+    // --- KITCHEN & FOOD (101-200) ---
+    {word: "pitchfork", meaning: "Tool for moving hay."}, {word: "trowel", meaning: "Small hand tool for digging."},
+    {word: "tractor", meaning: "Big vehicle for pulling farm equipment."}, {word: "scarecrow", meaning: "Keeps birds away from crops."},
+    {word: "fence", meaning: "A wooden wall around a field."}, {word: "marrow", meaning: "A very large green vegetable."},
+    {word: "radish", meaning: "Small, spicy red root vegetable."}, {word: "turnip", meaning: "Round white and purple root."},
+    {word: "lettuce", meaning: "Green leafy vegetable for salad."}, {word: "spinach", meaning: "Dark green healthy leaves."},
+    {word: "garlic", meaning: "White bulb that smells strong."}, {word: "chives", meaning: "Long thin green herbs."},
+    {word: "basil", meaning: "Sweet green herb for cooking."}, {word: "parsley", meaning: "Curly green herb for garnish."},
+    {word: "thyme", meaning: "Tiny herb leaves on a stem."}, {word: "rosemary", meaning: "Pine-smelling herb branch."},
+    {word: "lavender", meaning: "Purple flower that smells nice."}, {word: "sunflower", meaning: "Tall yellow flower with seeds."},
+    {word: "tulip", meaning: "Cup-shaped spring flower."}, {word: "daisy", meaning: "White flower with yellow center."},
+    {word: "orchid", meaning: "Fancy and colorful tropical flower."}, {word: "cactus", meaning: "Prickly plant from the desert."},
+    {word: "fern", meaning: "Green plant with feathery leaves."}, {word: "moss", meaning: "Soft green carpet on rocks."},
+    {word: "mushroom", meaning: "A fungus that grows in damp spots."}, {word: "berry", meaning: "Small, sweet, juicy fruit."},
+    {word: "cherry", meaning: "Small red fruit with a pit."}, {word: "peach", meaning: "Fuzzy orange fruit."},
+    {word: "pear", meaning: "Green fruit shaped like a bell."}, {word: "plum", meaning: "Smooth purple fruit."},
+    {word: "lemon", meaning: "Sour yellow citrus fruit."}, {word: "lime", meaning: "Sour green citrus fruit."},
+    {word: "orange", meaning: "Sweet citrus fruit with thick skin."}, {word: "grape", meaning: "Small round fruit on a vine."},
+    {word: "melon", meaning: "Large juicy summer fruit."}, {word: "walnut", meaning: "Nut with a hard crinkly shell."},
+    {word: "hazelnut", meaning: "Small round brown nut."}, {word: "peanut", meaning: "Nut that grows in a shell underground."},
+    {word: "cashew", meaning: "C-shaped creamy nut."}, {word: "almond", meaning: "Oval nut with light brown skin."},
+    {word: "butter", meaning: "Yellow fat made from cream."}, {word: "yogurt", meaning: "Creamy tangy food from milk."},
+    {word: "muffin", meaning: "Small individual cake."}, {word: "cookie", meaning: "Flat sweet baked treat."},
+    {word: "cake", meaning: "Sweet food for birthdays."}, {word: "pie", meaning: "Crust filled with fruit or meat."},
+    {word: "jam", meaning: "Sweet spread made from fruit."}, {word: "jelly", meaning: "Clear sweet fruit spread."},
+    {word: "syrup", meaning: "Sweet liquid from maple trees."}, {word: "sugar", meaning: "White crystals that taste sweet."},
+    {word: "salt", meaning: "White crystals for seasoning."}, {word: "pepper", meaning: "Black spice that makes you sneeze."},
+    {word: "cinnamon", meaning: "Brown spice from tree bark."}, {word: "vanilla", meaning: "Sweet bean used for baking flavor."},
+    {word: "coffee", meaning: "Dark drink for energy."}, {word: "tea", meaning: "Hot drink made from dried leaves."},
+    {word: "juice", meaning: "Liquid squeezed from fruit."}, {word: "milkshake", meaning: "Cold blended milk and ice cream."},
+    {word: "smoothie", meaning: "Blended fruit drink."}, {word: "water", meaning: "Clear liquid we need to live."},
+    {word: "soup", meaning: "Hot liquid food with veggies."}, {word: "stew", meaning: "Thick soup with large chunks."},
+    {word: "pasta", meaning: "Noodles made from wheat flour."}, {word: "rice", meaning: "Small white grains."},
+    {word: "noodle", meaning: "Long thin strip of pasta."}, {word: "pizza", meaning: "Flat bread with tomato and cheese."},
+    {word: "burger", meaning: "Meat patty in a bun."}, {word: "sandwich", meaning: "Food between two slices of bread."},
+    {word: "taco", meaning: "Folded shell with meat and cheese."}, {word: "salad", meaning: "Mix of cold raw vegetables."},
+    {word: "steak", meaning: "A thick slice of meat."}, {word: "chicken", meaning: "Common farm bird or its meat."},
+    {word: "turkey", meaning: "Large bird eaten at holidays."}, {word: "salmon", meaning: "Pink fish from the ocean."},
+    {word: "shrimp", meaning: "Small curled sea creature."}, {word: "lobster", meaning: "Sea creature with large claws."},
+    {word: "crab", meaning: "Sea creature that walks sideways."}, {word: "egg", meaning: "Oval food from a chicken."},
+    {word: "bacon", meaning: "Salty meat from a pig."}, {word: "sausage", meaning: "Minced meat in a tube shape."},
+    {word: "ham", meaning: "Cured meat from a pig's leg."}, {word: "beef", meaning: "Meat that comes from a cow."},
+    {word: "pork", meaning: "Meat that comes from a pig."}, {word: "lamb", meaning: "Meat from a young sheep."},
+    {word: "venison", meaning: "Meat from a deer."}, {word: "duck", meaning: "Water bird or its meat."},
+    {word: "potato", meaning: "Starchy vegetable from the ground."}, {word: "yam", meaning: "Sweet orange root vegetable."},
+    {word: "corn", meaning: "Yellow kernels on a cob."}, {word: "peas", meaning: "Small green balls in a pod."},
+    {word: "beans", meaning: "Seeds in a pod, often dried."}, {word: "broccoli", meaning: "Green veggie like a tiny tree."},
+    {word: "cabbage", meaning: "Large round head of leaves."}, {word: "cauliflower", meaning: "White veggie like broccoli."},
+    {word: "celery", meaning: "Crunchy green watery stalks."}, {word: "cucumber", meaning: "Long green veggie for pickles."},
+    {word: "pumpkin", meaning: "Large orange autumn squash."}, {word: "squash", meaning: "Generic term for hard autumn veggies."},
+
+    // --- HOUSEHOLD & DECOR (201-300) ---
+    {word: "eggplant", meaning: "Purple spongy vegetable."}, {word: "pepper", meaning: "Colorful hollow veggie."},
+    {word: "chili", meaning: "Small spicy pepper."}, {word: "ginger", meaning: "Spicy root for cooking."},
+    {word: "olive", meaning: "Small oily fruit for oil."}, {word: "pickle", meaning: "Cucumber soaked in vinegar."},
+    {word: "oil", meaning: "Liquid fat for cooking."}, {word: "vinegar", meaning: "Sour liquid for dressing."},
+    {word: "sauce", meaning: "Thick liquid for flavoring food."}, {word: "dip", meaning: "Thick sauce for snacks."},
+    {word: "snack", meaning: "Small amount of food between meals."}, {word: "crisps", meaning: "Thin fried potato slices."},
+    {word: "popcorn", meaning: "Puffed corn kernels."}, {word: "pretzels", meaning: "Salty knotted bread snacks."},
+    {word: "nuts", meaning: "Hard-shelled seeds of trees."}, {word: "fruit", meaning: "Sweet part of a plant with seeds."},
+    {word: "candy", meaning: "Sweet treats made of sugar."}, {word: "chocolate", meaning: "Brown sweet from cocoa beans."},
+    {word: "toffee", meaning: "Hard chewy sugar treat."}, {word: "caramel", meaning: "Cooked sugar liquid or candy."},
+    {word: "fudge", meaning: "Soft creamy chocolate treat."}, {word: "honeycomb", meaning: "Wax structure built by bees."},
+    {word: "marshmallow", meaning: "Soft puffy white sweet."}, {word: "licorice", meaning: "Black or red chewy candy."},
+    {word: "gum", meaning: "Chewy treat you don't swallow."}, {word: "mint", meaning: "Cool tasting green herb."},
+    {word: "donut", meaning: "Fried dough ring with sugar."}, {word: "pastry", meaning: "Baked dough with butter."},
+    {word: "croissant", meaning: "Flaky crescent-shaped bread."}, {word: "bagel", meaning: "Dense bread ring."},
+    {word: "pancake", meaning: "Flat round breakfast cake."}, {word: "waffle", meaning: "Batter cake with square patterns."},
+    {word: "toast", meaning: "Sliced bread that is browned."}, {word: "cereal", meaning: "Grain food for breakfast bowl."},
+    {word: "oatmeal", meaning: "Cooked mushy oats."}, {word: "porridge", meaning: "Boiled grain breakfast bowl."},
+    {word: "muesli", meaning: "Mix of oats, nuts, and fruit."}, {word: "granola", meaning: "Baked oats and honey."},
+    {word: "juice", meaning: "Drink from squeezed fruit."}, {word: "soda", meaning: "Sweet fizzy drink."},
+    {word: "lemonade", meaning: "Drink from lemons and sugar."}, {word: "cider", meaning: "Drink made from apples."},
+    {word: "wine", meaning: "Drink made from grapes."}, {word: "beer", meaning: "Drink made from fermented grain."},
+    {word: "cocktail", meaning: "Mixed alcoholic drink."}, {word: "whiskey", meaning: "Strong grain alcohol."},
+    {word: "vodka", meaning: "Clear strong alcohol."}, {word: "rum", meaning: "Strong alcohol from sugar cane."},
+    {word: "gin", meaning: "Alcohol flavored with berries."}, {word: "brandy", meaning: "Alcohol made from wine."},
+    {word: "tequila", meaning: "Alcohol made from agave plant."}, {word: "ice", meaning: "Frozen solid water."},
+    {word: "steam", meaning: "Water in the form of gas."}, {word: "smoke", meaning: "Cloud from something burning."},
+    {word: "fire", meaning: "Heat and light from burning."}, {word: "ash", meaning: "Gray powder after a fire."},
+    {word: "charcoal", meaning: "Black wood used for grilling."}, {word: "coal", meaning: "Black rock used for fuel."},
+    {word: "wood", meaning: "Hard material from a tree."}, {word: "stick", meaning: "Small branch from a tree."},
+    {word: "log", meaning: "Large piece of cut wood."}, {word: "plank", meaning: "Flat long piece of wood."},
+    {word: "brick", meaning: "Hard block for building walls."}, {word: "stone", meaning: "Hard rock material."},
+    {word: "glass", meaning: "Clear hard material for windows."}, {word: "metal", meaning: "Shiny hard building material."},
+    {word: "iron", meaning: "Heavy strong metal."}, {word: "steel", meaning: "Strong metal made of iron."},
+    {word: "copper", meaning: "Reddish metal used for wires."}, {word: "gold", meaning: "Shiny yellow precious metal."},
+    {word: "silver", meaning: "Shiny gray precious metal."}, {word: "bronze", meaning: "Brown metal made of copper."},
+    {word: "lead", meaning: "Heavy soft gray metal."}, {word: "tin", meaning: "Soft silvery metal."},
+    {word: "aluminum", meaning: "Light silvery metal for foil."}, {word: "plastic", meaning: "Man-made light material."},
+    {word: "rubber", meaning: "Stretchy bouncy material."}, {word: "leather", meaning: "Material made from animal skin."},
+    {word: "fabric", meaning: "Material used for clothing."}, {word: "cloth", meaning: "Piece of fabric."},
+    {word: "thread", meaning: "Thin string for sewing."}, {word: "string", meaning: "Thick thread for tying."},
+    {word: "rope", meaning: "Very thick string."}, {word: "wire", meaning: "Thin long piece of metal."},
+    {word: "cable", meaning: "Thick group of wires."}, {word: "tape", meaning: "Sticky strip for fixing."},
+    {word: "glue", meaning: "Sticky liquid for joining."}, {word: "paint", meaning: "Colored liquid for surfaces."},
+    {word: "ink", meaning: "Colored liquid for writing."}, {word: "dye", meaning: "Liquid for coloring fabric."},
+    {word: "wax", meaning: "Soft material for candles."}, {word: "soap", meaning: "Material for cleaning skin."},
+    {word: "shampoo", meaning: "Liquid for cleaning hair."}, {word: "perfume", meaning: "Liquid that smells nice."},
+
+    // --- TOOLS & OBJECTS (301-400) ---
+    {word: "lotion", meaning: "Cream for softening skin."}, {word: "oil", meaning: "Liquid for lubricating machines."},
+    {word: "grease", meaning: "Thick oil for machines."}, {word: "fuel", meaning: "Material used for energy."},
+    {word: "petrol", meaning: "Liquid fuel for cars."}, {word: "diesel", meaning: "Fuel for trucks and buses."},
+    {word: "gas", meaning: "Fuel for heating or cooking."}, {word: "electricity", meaning: "Energy that powers lights."},
+    {word: "power", meaning: "Energy to make things work."}, {word: "battery", meaning: "Small object that stores power."},
+    {word: "engine", meaning: "Machine that creates motion."}, {word: "motor", meaning: "Small engine powered by power."},
+    {word: "wheel", meaning: "Round part that turns."}, {word: "axle", meaning: "Bar that holds a wheel."},
+    {word: "gear", meaning: "Toothed wheel that turns."}, {word: "lever", meaning: "Bar used for prying."},
+    {word: "pulley", meaning: "Wheel and rope for lifting."}, {word: "screw", meaning: "Metal pin with threads."},
+    {word: "bolt", meaning: "Metal pin for a nut."}, {word: "nut", meaning: "Metal ring for a bolt."},
+    {word: "nail", meaning: "Thin metal pin with a head."}, {word: "hammer", meaning: "Tool for driving nails."},
+    {word: "saw", meaning: "Tool with teeth for cutting."}, {word: "drill", meaning: "Tool for making holes."},
+    {word: "wrench", meaning: "Tool for turning bolts."}, {word: "pliers", meaning: "Tool for gripping items."},
+    {word: "screwdriver", meaning: "Tool for turning screws."}, {word: "file", meaning: "Tool for smoothing metal."},
+    {word: "chisel", meaning: "Tool for carving wood."}, {word: "plane", meaning: "Tool for smoothing wood."},
+    {word: "clamp", meaning: "Tool for holding items together."}, {word: "vice", meaning: "Large clamp on a bench."},
+    {word: "level", meaning: "Tool for checking flatness."}, {word: "tape", meaning: "Rule for measuring length."},
+    {word: "ruler", meaning: "Flat bar for measuring."}, {word: "scale", meaning: "Machine for measuring weight."},
+    {word: "thermometer", meaning: "Tool for measuring temperature."}, {word: "compass", meaning: "Tool for finding North."},
+    {word: "map", meaning: "Drawing of a large area."}, {word: "globe", meaning: "Round model of the Earth."},
+    {word: "book", meaning: "Written work on pages."}, {word: "magazine", meaning: "Paper book with articles."},
+    {word: "newspaper", meaning: "Large sheets with daily news."}, {word: "letter", meaning: "Message written on paper."},
+    {word: "envelope", meaning: "Paper cover for a letter."}, {word: "stamp", meaning: "Small sticker for mailing."},
+    {word: "package", meaning: "Box or bag for shipping."}, {word: "box", meaning: "Container with six sides."},
+    {word: "bag", meaning: "Flexible container for items."}, {word: "pocket", meaning: "Small bag in clothing."},
+    {word: "wallet", meaning: "Small case for money."}, {word: "purse", meaning: "Bag for carrying money and items."},
+    {word: "backpack", meaning: "Bag worn on the back."}, {word: "suitcase", meaning: "Large bag for travel."},
+    {word: "trunk", meaning: "Very large box for storage."}, {word: "shelf", meaning: "Flat board for storage."},
+    {word: "closet", meaning: "Small room for storage."}, {word: "cabinet", meaning: "Box with doors for storage."},
+    {word: "drawer", meaning: "Box that slides out."}, {word: "bin", meaning: "Container for trash."},
+    {word: "basket", meaning: "Container made of woven wood."}, {word: "barrel", meaning: "Large round wood container."},
+    {word: "bottle", meaning: "Container with a narrow neck."}, {word: "jar", meaning: "Glass container with a wide mouth."},
+    {word: "can", meaning: "Metal container for food."}, {word: "tube", meaning: "Long hollow container."},
+    {word: "case", meaning: "Hard cover for protection."}, {word: "cover", meaning: "Object that goes over something."},
+    {word: "lid", meaning: "Top for a container."}, {word: "cap", meaning: "Small lid for a bottle."},
+    {word: "plug", meaning: "Object used to block a hole."}, {word: "seal", meaning: "Object used to close tightly."},
+    {word: "handle", meaning: "Part used for holding."}, {word: "knob", meaning: "Round handle for turning."},
+    {word: "hinge", meaning: "Metal joint for a door."}, {word: "latch", meaning: "Metal bar for closing a door."},
+    {word: "lock", meaning: "Device for keeping something closed."}, {word: "key", meaning: "Metal object for a lock."},
+    {word: "door", meaning: "Object that blocks an entrance."}, {word: "gate", meaning: "Door in a fence."},
+    {word: "window", meaning: "Glass in a wall for light."}, {word: "roof", meaning: "Top covering of a building."},
+    {word: "ceiling", meaning: "Inside top of a room."}, {word: "floor", meaning: "Bottom surface of a room."},
+    {word: "wall", meaning: "Solid side of a room."}, {word: "room", meaning: "Area inside a building."},
+    {word: "house", meaning: "Building for living in."}, {word: "shed", meaning: "Small building for storage."},
+    {word: "barn", meaning: "Large building for farming."}, {word: "garage", meaning: "Building for storing cars."},
+
+    // --- NATURE & MISC (401-500) ---
+    {word: "attic", meaning: "Room under the roof."}, {word: "basement", meaning: "Room under the ground."},
+    {word: "porch", meaning: "Area outside an entrance."}, {word: "deck", meaning: "Wooden area outside a house."},
+    {word: "yard", meaning: "Area around a building."}, {word: "garden", meaning: "Area for growing plants."},
+    {word: "park", meaning: "Large public green area."}, {word: "field", meaning: "Large open area of grass."},
+    {word: "forest", meaning: "Large area with many trees."}, {word: "jungle", meaning: "Thick tropical forest."},
+    {word: "desert", meaning: "Dry area with sand and sun."}, {word: "mountain", meaning: "Very high land area."},
+    {word: "hill", meaning: "Small raised land area."}, {word: "valley", meaning: "Low land between hills."},
+    {word: "canyon", meaning: "Deep valley with steep sides."}, {word: "cave", meaning: "Hole in a mountain."},
+    {word: "river", meaning: "Large flow of water."}, {word: "stream", meaning: "Small flow of water."},
+    {word: "lake", meaning: "Large area of still water."}, {word: "pond", meaning: "Small area of still water."},
+    {word: "ocean", meaning: "Largest area of salt water."}, {word: "sea", meaning: "Large area of salt water."},
+    {word: "beach", meaning: "Sand next to the water."}, {word: "island", meaning: "Land surrounded by water."},
+    {word: "reef", meaning: "Rock or coral in the ocean."}, {word: "wave", meaning: "Moving water in the ocean."},
+    {word: "cloud", meaning: "Water vapor in the sky."}, {word: "fog", meaning: "Cloud that is near the ground."},
+    {word: "mist", meaning: "Thin light fog."}, {word: "storm", meaning: "Wind and rain together."},
+    {word: "thunder", meaning: "Loud sound in a storm."}, {word: "lightning", meaning: "Flash of light in a storm."},
+    {word: "hurricane", meaning: "Very large spinning storm."}, {word: "tornado", meaning: "Spinning funnel of wind."},
+    {word: "earthquake", meaning: "Shaking of the ground."}, {word: "volcano", meaning: "Mountain that spits fire."},
+    {word: "flood", meaning: "Too much water on land."}, {word: "drought", meaning: "Not enough water on land."},
+    {word: "heat", meaning: "Quality of being hot."}, {word: "cold", meaning: "Quality of being cold."},
+    {word: "ice", meaning: "Frozen water."}, {word: "frost", meaning: "Frozen dew on grass."},
+    {word: "hail", meaning: "Balls of ice from the sky."}, {word: "sleet", meaning: "Mix of rain and snow."},
+    {word: "blizzard", meaning: "Large storm with snow."}, {word: "climate", meaning: "Average weather over time."},
+    {word: "season", meaning: "Time of year (Spring, Summer)."}, {word: "spring", meaning: "Time when plants grow."},
+    {word: "summer", meaning: "Hottest time of the year."}, {word: "autumn", meaning: "Time when leaves fall."},
+    {word: "winter", meaning: "Coldest time of the year."}, {word: "day", meaning: "Time when the sun is out."},
+    {word: "night", meaning: "Time when the sun is gone."}, {word: "dawn", meaning: "Time when the sun comes up."},
+    {word: "dusk", meaning: "Time when the sun goes down."}, {word: "noon", meaning: "Middle of the day."},
+    {word: "midnight", meaning: "Middle of the night."}, {word: "hour", meaning: "Sixty minutes of time."},
+    {word: "minute", meaning: "Sixty seconds of time."}, {word: "second", meaning: "Shortest unit of time."},
+    {word: "week", meaning: "Seven days of time."}, {word: "month", meaning: "Four weeks of time."},
+    {word: "year", meaning: "Twelve months of time."}, {word: "decade", meaning: "Ten years of time."},
+    {word: "century", meaning: "One hundred years of time."}, {word: "history", meaning: "Study of the past."},
+    {word: "future", meaning: "Time that has not happened."}, {word: "present", meaning: "Time that is happening now."},
+    {word: "clock", meaning: "Device for measuring time."}, {word: "calendar", meaning: "Device for tracking dates."},
+    {word: "watch", meaning: "Small clock for the wrist."}, {word: "compass", meaning: "Tool for tracking direction."},
+    {word: "telescope", meaning: "Tool for seeing stars."}, {word: "microscope", meaning: "Tool for seeing tiny things."},
+    {word: "camera", meaning: "Tool for taking pictures."}, {word: "phone", meaning: "Tool for talking to people."},
+    {word: "computer", meaning: "Tool for processing data."}, {word: "screen", meaning: "Part that shows pictures."},
+    {word: "keyboard", meaning: "Part used for typing words."}, {word: "mouse", meaning: "Part used for pointing."},
+    {word: "printer", meaning: "Tool for putting words on paper."}, {word: "radio", meaning: "Tool for listening to sounds."},
+    {word: "television", meaning: "Tool for watching shows."}, {word: "lamp", meaning: "Light for a desk or room."},
+    {word: "flashlight", meaning: "Small light you carry."}, {word: "candle", meaning: "Wax stick with a flame."},
+    {word: "match", meaning: "Small stick for starting fire."}, {word: "lighter", meaning: "Small tool for starting fire."},
+    {word: "mirror", meaning: "Glass that shows your face."}, {word: "comb", meaning: "Tool for fixing hair."},
+    {word: "razor", meaning: "Sharp tool for shaving."}, {word: "towel", meaning: "Cloth for drying skin."},
+    {word: "blanket", meaning: "Thick cloth for warmth."}, {word: "curtain", meaning: "Cloth for covering windows."},
+    {word: "carpet", meaning: "Soft covering for the floor."}, {word: "pillow", meaning: "Soft object for the head."},
+    {word: "mattress", meaning: "Large soft object for sleep."}, {word: "sheet", meaning: "Thin cloth for a bed."},
+    {word: "soap", meaning: "Material for washing hands."}, {word: "sponge", meaning: "Porous object for cleaning."},
+    {word: "broom", meaning: "Tool for sweeping the floor."}, {word: "mop", meaning: "Tool for washing the floor."},
+    {word: "bucket", meaning: "Round container for water."}, {word: "shovel", meaning: "Tool for moving dirt."},
+    {word: "hammer", meaning: "Tool for driving nails."}, {word: "drill", meaning: "Tool for making holes."},
+    {word: "saw", meaning: "Tool for cutting wood."}, {word: "wrench", meaning: "Tool for turning nuts."},
+    {word: "pliers", meaning: "Tool for pulling wires."}, {word: "screw", meaning: "Metal pin for wood."},
+    {word: "nail", meaning: "Metal pin with a head."}, {word: "brick", meaning: "Red block for building."},
+    {word: "stone", meaning: "Hard natural material."}, {word: "wood", meaning: "Material from a tree trunk."},
+    {word: "plank", meaning: "Flat piece of cut wood."}, {word: "pipe", meaning: "Hollow tube for water."},
+    {word: "wire", meaning: "Thin metal for electricity."}, {word: "glue", meaning: "Sticky substance for fixing."},
+    {word: "tape", meaning: "Sticky strip of plastic."}, {word: "paint", meaning: "Liquid color for walls."},
+    {word: "brush", meaning: "Tool for applying paint."}, {word: "ladder", meaning: "Steps for climbing high."},
+    {word: "rope", meaning: "Heavy cord for pulling."}, {word: "chain", meaning: "Metal rings for pulling."},
+    {word: "basket", meaning: "Woven box for carrying."}, {word: "barrel", meaning: "Large round wood container."},
+    {word: "box", meaning: "Six-sided container."}, {word: "bag", meaning: "Soft fabric container."},
+    {word: "pocket", meaning: "Bag sewn into pants."}, {word: "purse", meaning: "Bag for money and keys."},
+    {word: "backpack", meaning: "Bag for school books."}, {word: "suitcase", meaning: "Bag for traveling."},
+    {word: "wallet", meaning: "Small case for money."}, {word: "ticket", meaning: "Paper for riding a bus."},
+    {word: "passport", meaning: "Book for traveling countries."}, {word: "money", meaning: "Paper or coins for buying."},
+    {word: "coin", meaning: "Small metal piece of money."}, {word: "stamp", meaning: "Small sticker for mail."},
+    {word: "envelope", meaning: "Paper cover for mail."}, {word: "letter", meaning: "Written note to a friend."},
+    {word: "package", meaning: "Cardboard box for shipping."}, {word: "gift", meaning: "Object given to someone."},
+    {word: "toy", meaning: "Object for children to play."}, {word: "game", meaning: "Activity with rules to follow."},
+    {word: "doll", meaning: "Toy that looks like a person."}, {word: "ball", meaning: "Round object for sports."},
+    {word: "bike", meaning: "Vehicle with two wheels."}, {word: "scooter", meaning: "Board with two small wheels."},
+    {word: "skate", meaning: "Boot with wheels or a blade."}, {word: "kite", meaning: "Paper toy for the wind."},
+    {word: "card", meaning: "Small stiff paper for games."}, {word: "dice", meaning: "Small cube with dots."},
+    {word: "puzzle", meaning: "Game of fitting pieces."}, {word: "story", meaning: "Account of events told."},
+    {word: "poem", meaning: "Writing with rhythm and rhyme."}, {word: "song", meaning: "Music with words to sing."},
+    {word: "music", meaning: "Pleasant sounds from instruments."}, {word: "dance", meaning: "Moving the body to music."},
+    {word: "movie", meaning: "Story shown on a screen."}, {word: "play", meaning: "Story performed on a stage."},
+    {word: "art", meaning: "Creation of beautiful things."}, {word: "drawing", meaning: "Picture made with a pencil."},
+    {word: "painting", meaning: "Picture made with colors."}, {word: "sculpture", meaning: "Object carved from stone."},
+    {word: "photo", meaning: "Picture made with light."}, {word: "hobby", meaning: "Activity done for fun."},
+    {word: "sport", meaning: "Activity with physical effort."}, {word: "soccer", meaning: "Game of kicking a ball."},
+    {word: "tennis", meaning: "Game of hitting a ball."}, {word: "swimming", meaning: "Moving through the water."},
+    {word: "hiking", meaning: "Walking in the mountains."}, {word: "camping", meaning: "Sleeping in a tent outside."},
+    {word: "fishing", meaning: "Catching fish in the river."}, {word: "hunting", meaning: "Catching animals for food."},
+    {word: "travel", meaning: "Going to a new place."}, {word: "journey", meaning: "A long trip to a place."},
+    {word: "adventure", meaning: "Exciting or risky journey."}, {word: "vacation", meaning: "Time away from work."},
+    {word: "holiday", meaning: "Special day of celebration."}
+];
+
+const masterPool = Array.from(new Map(rawPool.map(item => [item.word, item])).values());
+const shuffle = (arr) => { for(let i=arr.length-1; i>0; i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; };
+
+const seasons = [
+    {name: "Spring", emoji: "🌸", color: "#81b29a", sky: ["#ff9a9e, #fad0c4, #a1c4fd", "#00BFFF, #87CEFA", "#2c3e50, #4b0082", "#000428, #004e92"]},
+    {name: "Summer", emoji: "☀️", color: "#e76f51", sky: ["#ffe259, #ffa751", "#2193b0, #6dd5ed", "#e96443, #904e95", "#0f2027, #2c5364"]},
+    {name: "Fall", emoji: "🍂", color: "#a06cd5", sky: ["#f093fb, #f5576c", "#ffafbd, #ffc3a0", "#414345, #232526", "#141e30, #243b55"]},
+    {name: "Winter", emoji: "❄️", color: "#457b9d", sky: ["#e6e9f0, #eef1f5", "#83a4d4, #b6fbff", "#2980b9, #2c3e50", "#000000, #434343"]}
+];
+
+/* --- STATE & HUD --- */
+let totalRounds = 0, seasonCount = 0, hp = 3, score = 0, streak = 0, maxStreak = 0, baseWordCount = 4, baseTimer = 10, bonusTimer = 0;
+let roundWords = [], quizWords = [], currentIndex = 0, timeLeft, timerInterval, activeSkyId = 1;
+
+const el = (id) => document.getElementById(id);
+const dom = {
+    card: el("card"), ans: el("answer"), timer: el("timer"), score: el("top-score"), hp: el("playerHP"),
+    day: el("playerDay"), strk: el("streakInfo"), sIcon: el("season-icon"), start: el("startBtn"),
+    inst: el("instructBtn"), subm: el("submitBtn"), rest: el("restartBtn"), resetSave: el("resetSaveBtn"), 
+    tavern: el("tavern-container"), btns: el("btn-container"), game: el("game"), starBox: el("star-display")
+};
+
+const saveGame = () => { localStorage.setItem('cozySave', JSON.stringify({ hp, score, totalRounds, seasonCount, bonusTimer, baseWordCount, baseTimer, maxStreak, streak })); };
+const loadGame = () => {
+    const saved = JSON.parse(localStorage.getItem('cozySave'));
+    if (saved && saved.hp > 0) {
+        hp = saved.hp; score = saved.score; totalRounds = saved.totalRounds; seasonCount = saved.seasonCount; 
+        bonusTimer = saved.bonusTimer; baseWordCount = saved.baseWordCount; baseTimer = saved.baseTimer; 
+        maxStreak = saved.maxStreak || 0; streak = saved.streak || 0;
+        dom.card.innerHTML = "Welcome back, Farmer!<br>Ready to continue?";
+        dom.resetSave.style.display = "block"; updateUI(); setSky(false);
+    }
+};
+
+const spawnStars = () => {
+    const s = document.createElement('div'); s.innerHTML = '⭐⭐⭐';
+    s.style.cssText = 'position:absolute; top:50%; font-size:30px; animation: floatUp 1s forwards; pointer-events:none; z-index:200;';
+    dom.game.appendChild(s); setTimeout(() => s.remove(), 1000);
+};
+
+const setSky = (isTavern = false) => {
+    activeSkyId = activeSkyId === 1 ? 2 : 1;
+    const layer = el(`sky-${activeSkyId}`), prev = el(`sky-${activeSkyId === 1 ? 2 : 1}`);
+    if (isTavern) layer.style.background = "linear-gradient(to bottom, #432818, #2b170e)";
+    else layer.style.background = `linear-gradient(to bottom, ${seasons[seasonCount % 4].sky[totalRounds % 4]})`;
+    layer.classList.add('active-sky'); prev.classList.remove('active-sky');
+};
+
+const updateUI = (starsEarned = 0) => {
+    const s = seasons[seasonCount % 4];
+    dom.hp.innerText = `❤️ ${hp}`; dom.score.innerText = score;
+    if (starsEarned > 0) { dom.starBox.classList.remove('star-animate'); void dom.starBox.offsetWidth; dom.starBox.classList.add('star-animate'); }
+    dom.day.innerText = `Day ${(totalRounds % 4) + 1}`;
+    let multiSuffix = "";
+    if (streak >= 15) multiSuffix = " (x3)"; else if (streak >= 10) multiSuffix = " (x2)";
+    dom.strk.innerText = `🔥 ${streak}${multiSuffix}`;
+    dom.sIcon.innerText = s.emoji; dom.sIcon.style.backgroundColor = s.color;
+};
+
+/* --- CORE LOOP --- */
+const startRound = () => {
+    playSound(1046, 'sine', 0.5, 0.2); 
+    dom.start.style.display = dom.inst.style.display = dom.rest.style.display = dom.resetSave.style.display = "none";
+    dom.subm.style.display = dom.ans.style.display = "block";
+    roundWords = shuffle([...masterPool]).slice(0, baseWordCount);
+    quizWords = shuffle([...roundWords]);
+    currentIndex = 0; setSky(); updateUI(); 
+    dom.ans.disabled = true; 
+    
+    dom.card.style.opacity = 0;
+    setTimeout(() => {
+        dom.card.innerHTML = `<div class='word-grid'>${roundWords.map(w => `<div class='word-chip'>${w.word}</div>`).join('')}</div>`;
+        dom.card.style.opacity = 1;
+    }, 200);
+
+    timeLeft = baseTimer + bonusTimer; dom.timer.innerText = timeLeft;
+    dom.timer.classList.remove('danger-text');
+
+    timerInterval = setInterval(() => { 
+        timeLeft--; if(timeLeft >= 0) dom.timer.innerText = timeLeft;
+        if(timeLeft <= 3 && timeLeft > 0) { dom.timer.classList.add('danger-text'); playTick(); }
+        if(timeLeft < 0) { clearInterval(timerInterval); quizPhase(); } 
+    }, 1000);
+};
+
+const quizPhase = () => { 
+    dom.ans.disabled = false; 
+    dom.ans.style.display = "block";
+    dom.ans.focus(); 
+    dom.timer.innerText = "!"; dom.timer.classList.remove('danger-text');
+    dom.card.style.opacity = 0;
+    setTimeout(() => { 
+        dom.card.innerHTML = `Which matches?<br><br><i>${quizWords[currentIndex].meaning}</i>`; 
+        dom.card.style.opacity = 1; 
+        dom.ans.focus(); 
+    }, 250);
+};
+
+const submit = () => {
+    const val = dom.ans.value.trim().toLowerCase();
+    if (!val || dom.ans.disabled) return;
+    
+    if (val === quizWords[currentIndex].word) {
+        streak++; if(streak > maxStreak) maxStreak = streak;
+        playSound(1318, 'sine', 0.4, 0.2); dom.card.classList.add('correct-animate');
+        setTimeout(() => dom.card.classList.remove('correct-animate'), 500);
+        
+        if (streak >= 5 && streak % 5 === 0) { 
+            let multi = 1; if(streak >= 15) multi = 3; else if(streak >= 10) multi = 2;
+            const reward = 10 * multi; score += reward; updateUI(reward); 
+            playSound(1567, 'sine', 0.8, 0.3); spawnStars();
+            dom.card.innerHTML = `<span class='streak-glow' style='font-size:28px;'>🔥 x${multi} MULTIPLIER!<br>+${reward} ⭐</span>`; 
+            dom.ans.disabled = true; setTimeout(() => { dom.ans.disabled = false; next(); }, 1200); return;
+        }
+        setTimeout(next, 800);
+    } else {
+        streak = 0; hp--; playWrongSound(); 
+        dom.game.classList.add('shake-animate'); setTimeout(() => dom.game.classList.remove('shake-animate'), 600);
+        dom.card.innerHTML = `<span style="color:#d00000">Incorrect!</span><br>It was <b>${quizWords[currentIndex].word}</b>`;
+        dom.ans.disabled = true; updateUI();
+        setTimeout(() => { if(hp>0){ dom.ans.disabled = false; dom.ans.focus(); next(); } else endGame(); }, 1800);
+    }
+};
+
+const next = () => {
+    dom.ans.value = ""; updateUI();
+    if (++currentIndex < quizWords.length) return quizPhase();
+    totalRounds++; score += 10; updateUI(10); saveGame();
+    dom.subm.style.display = dom.ans.style.display = "none";
+    dom.start.style.display = "block"; dom.start.innerText = "Begin Day";
+    if (totalRounds > 0 && totalRounds % 4 === 0) openTavern();
+    else dom.card.innerHTML = `Day Complete! +10 ⭐<br>Ready for Day ${(totalRounds % 4) + 1}?`;
+};
+
+const openTavern = () => {
+    playSound(880, 'sine', 1.0, 0.2); setSky(true); document.body.classList.add('tavern-mode');
+    dom.btns.style.display = "none"; dom.tavern.style.display = "block"; dom.timer.innerText = "🍺"; 
+    score += 25; updateUI(25); saveGame();
+    dom.card.innerHTML = "<b>The Tavern is Open!</b><br>Season Finish: +25 ⭐";
+};
+
+const startNewSeason = () => {
+    playSeasonArpeggio(); seasonCount++; baseWordCount += 2; baseTimer += 2;
+    document.body.classList.remove('tavern-mode'); dom.btns.style.display = "block"; dom.tavern.style.display = "none";
+    setSky(); updateUI(); saveGame(); dom.card.innerHTML = `${seasons[seasonCount % 4].name} begins!`;
+};
+
+const endGame = () => { 
+    playWrongSound(); clearInterval(timerInterval); 
+    dom.subm.style.display = dom.ans.style.display = dom.timer.style.display = "none"; 
+    dom.rest.style.display = "block"; 
+    let rank = "Village Helper";
+    if (score >= 600) rank = "Memory Master"; else if (score >= 300) rank = "Tavern Regular"; else if (score >= 100) rank = "Apprentice Merchant";
+    dom.card.innerHTML = `<h3 style="margin:0; color:#d00000;">Game Over!</h3>
+    <div style="font-size:16px; margin-top:10px;"><b>Rank:</b> ${rank}<br><b>Final Score:</b> ${score} ⭐<br><b>Days Survived:</b> ${totalRounds}<br><b>Best Streak:</b> ${maxStreak}</div>`;
+    localStorage.removeItem('cozySave');
+};
+
+/* --- LISTENERS --- */
+dom.start.onclick = startRound; dom.subm.onclick = submit; 
+// ENTER KEY IS THE ONLY DESKTOP SHORTCUT REMAINING
+dom.ans.onkeypress = (e) => e.key === "Enter" && submit();
+
+dom.inst.onclick = () => { playSound(659, 'sine', 0.2); dom.card.innerHTML = `<div style="text-align:left; font-size:17px; line-height:1.4;"><b>📖 How to Play:</b><br><b>1. Memorize:</b> Learn the words before time runs out.<br><b>2. Recall:</b> Read the clue, type the exact word.<br><b>3. Streaks:</b> Build long streaks for huge ⭐ multipliers!<br><b>4. Survive:</b> Reach Day 4 to shop at the Tavern.</div>`; };
+dom.resetSave.onclick = () => { localStorage.removeItem('cozySave'); location.reload(); };
+
+el("buyHeartBtn").onclick = () => { if(score>=100){ playSound(1174, 'sine', 0.4, 0.2); score-=100; hp++; updateUI(); saveGame(); dom.card.innerHTML="Bought Heart! ❤️";} else { playWrongSound(); dom.card.innerHTML="Not enough ⭐!"; } };
+el("buyTimeBtn").onclick = () => { if(score>=50){ playSound(1174, 'sine', 0.4, 0.2); score-=50; bonusTimer+=3; updateUI(); saveGame(); dom.card.innerHTML="Bought +3s Time! ⏳";} else { playWrongSound(); dom.card.innerHTML="Not enough ⭐!"; } };
+el("nextSeasonBtn").onclick = startNewSeason; dom.rest.onclick = () => location.reload();
+
+loadGame();
+</script>
+</body>
+</html>
