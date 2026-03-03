@@ -30,7 +30,7 @@
     .sky-layer { position: fixed; inset: 0; z-index: -2; opacity: 0; transition: opacity 1.5s ease; }
     .active-sky { opacity: 1 !important; }
 
-    /* Main Container - Dark Mode Protection Locked */
+    /* Main Container */
     #game { 
         width: 92%; max-width: 380px; 
         background-color: #fdf6e3 !important; 
@@ -40,7 +40,7 @@
     }
     .tavern-mode #game { background-color: #432818 !important; border-color: #99582a; color: #ffe6a7 !important; }
 
-    /* Juice Animations */
+    /* Animations */
     @keyframes starPop { 50% { transform: scale(1.3); } }
     .star-animate { animation: starPop 0.4s ease; }
     @keyframes shake { 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
@@ -102,7 +102,7 @@
 </div>
 
 <script>
-// --- LOUDER AUDIO SYSTEM ---
+// --- AUDIO SYSTEM ---
 let audioCtx;
 function initAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -113,7 +113,7 @@ function initAudio() {
 document.addEventListener('click', initAudio, { once: true });
 document.addEventListener('touchstart', initAudio, { once: true });
 
-// Default volume increased from 0.05 to 0.2 (4x louder)
+// Volume
 function playSound(freq, type, duration, vol = 0.2, delay = 0) {
     try {
         initAudio();
@@ -128,22 +128,22 @@ function playSound(freq, type, duration, vol = 0.2, delay = 0) {
     } catch(e) {}
 }
 
-// Louder button tap
+// Button tap
 function playTap() { playSound(800, 'sine', 0.08, 0.1); }
 
-// Louder Season Arpeggio
+// Season Arpeggio
 function playSeasonArpeggio() {
     const notes = [523.25, 659.25, 783.99, 1046.50]; 
     notes.forEach((f, i) => playSound(f, 'sine', 0.8, 0.15, i * 0.15));
 }
 
-// Louder and sharper "Uh-Oh" buzzer
+// Wrong 
 function playWrongSound() {
     playSound(250, 'sawtooth', 0.15, 0.15, 0); 
     playSound(150, 'sawtooth', 0.3, 0.15, 0.15); 
 }
 
-// Attach tap sound to all buttons
+// Taps
 document.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('mousedown', playTap);
     btn.addEventListener('touchstart', playTap, {passive: true});
@@ -152,7 +152,7 @@ document.querySelectorAll('button').forEach(btn => {
 
 // --- MASTER POOL ---
 const masterPool = [
-    // --- FARM & GARDEN (1-100) ---
+    // --- FARM & GARDEN ---
     {word: "apple", meaning: "A red or green fruit."}, {word: "bucket", meaning: "Used to carry water."},
     {word: "carrot", meaning: "An orange vegetable."}, {word: "quilt", meaning: "A warm patchwork blanket."},
     {word: "hammer", meaning: "A tool used to hit nails."}, {word: "bread", meaning: "Baked food made of flour."},
@@ -205,7 +205,7 @@ const masterPool = [
     {word: "rope", meaning: "Thick tying cord."}, {word: "brush", meaning: "Used for painting."},
     {word: "bucket", meaning: "Holds water or sand."},
 
-    // --- KITCHEN & FOOD (101-200) ---
+    // --- KITCHEN & FOOD ---
     {word: "pitchfork", meaning: "Tool for moving hay."}, {word: "trowel", meaning: "Small hand tool for digging."},
     {word: "tractor", meaning: "Big vehicle for pulling farm equipment."}, {word: "scarecrow", meaning: "Keeps birds away from crops."},
     {word: "fence", meaning: "A wooden wall around a field."}, {word: "marrow", meaning: "A very large green vegetable."},
@@ -256,7 +256,7 @@ const masterPool = [
     {word: "celery", meaning: "Crunchy green watery stalks."}, {word: "cucumber", meaning: "Long green veggie for pickles."},
     {word: "pumpkin", meaning: "Large orange autumn squash."}, {word: "squash", meaning: "Generic term for hard autumn veggies."},
 
-    // --- HOUSEHOLD & DECOR (201-300) ---
+    // --- HOUSEHOLD & DECOR ---
     {word: "eggplant", meaning: "Purple spongy vegetable."}, {word: "pepper", meaning: "Colorful hollow veggie."},
     {word: "chili", meaning: "Small spicy pepper."}, {word: "ginger", meaning: "Spicy root for cooking."},
     {word: "olive", meaning: "Small oily fruit for oil."}, {word: "pickle", meaning: "Cucumber soaked in vinegar."},
@@ -305,7 +305,7 @@ const masterPool = [
     {word: "wax", meaning: "Soft material for candles."}, {word: "soap", meaning: "Material for cleaning skin."},
     {word: "shampoo", meaning: "Liquid for cleaning hair."}, {word: "perfume", meaning: "Liquid that smells nice."},
 
-    // --- TOOLS & OBJECTS (301-400) ---
+    // --- TOOLS & OBJECTS ---
     {word: "lotion", meaning: "Cream for softening skin."}, {word: "oil", meaning: "Liquid for lubricating machines."},
     {word: "grease", meaning: "Thick oil for machines."}, {word: "fuel", meaning: "Material used for energy."},
     {word: "petrol", meaning: "Liquid fuel for cars."}, {word: "diesel", meaning: "Fuel for trucks and buses."},
@@ -352,7 +352,7 @@ const masterPool = [
     {word: "house", meaning: "Building for living in."}, {word: "shed", meaning: "Small building for storage."},
     {word: "barn", meaning: "Large building for farming."}, {word: "garage", meaning: "Building for storing cars."},
 
-    // --- NATURE & MISC (401-500) ---
+    // --- NATURE & MISC ---
     {word: "attic", meaning: "Room under the roof."}, {word: "basement", meaning: "Room under the ground."},
     {word: "porch", meaning: "Area outside an entrance."}, {word: "deck", meaning: "Wooden area outside a house."},
     {word: "yard", meaning: "Area around a building."}, {word: "garden", meaning: "Area for growing plants."},
@@ -548,11 +548,20 @@ const startNewSeason = () => {
 
 const endGame = () => { playWrongSound(); clearInterval(timerInterval); dom.card.innerHTML = "Game Over!"; dom.subm.style.display = "none"; dom.rest.style.display = "block"; };
 
-// --- BUTTON LOGIC ---
+// --- BUTTON ---
 dom.start.onclick = startRound; 
 dom.subm.onclick = submit; 
 dom.ans.onkeypress = (e) => e.key === "Enter" && submit();
-dom.inst.onclick = () => { dom.card.innerHTML = "Memorize items, reach streaks of 5 for stars, and spend them at the Tavern every 4 days!"; };
+dom.inst.onclick = () => { 
+    playSound(659, 'sine', 0.2); 
+    dom.card.innerHTML = `<div style="text-align:left; font-size:17px; line-height:1.4;">
+        <b>How to Play:</b><br>
+        <b>1. Memorize the words before the timer runs out.<br>
+        <b>2. Read the clue to find the matching word.<br>
+        <b>3. Type the exact word and submit.<br>
+        <b>4. Keep your ❤️s and reach Day 4 to shop!
+    </div>`; 
+};
 
 el("buyHeartBtn").onclick = () => { 
     if(score>=100){ playSound(1174, 'sine', 0.4, 0.2); score-=100; hp++; updateUI(); dom.card.innerHTML="Bought Heart! ❤️";} 
